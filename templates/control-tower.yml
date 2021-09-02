@@ -248,7 +248,7 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaZipsBucket
-        S3Key: !Join ['', [!Ref 'QSS3KeyPrefix', 'functions/packages/onboarding/<OUR_ZIP_NAME>.zip']] # TODO: Set path to onboarding zip
+        S3Key: !Join ['', [!Ref 'QSS3KeyPrefix', 'functions/packages/onboarding/DruvaCloudRangerOnboarding.zip']] # TODO: Set path to onboarding zip
       Handler: onboarding.lambda_handler
       Runtime: nodejs14.x
       Timeout: 900
@@ -400,7 +400,7 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaZipsBucket
-        S3Key: !Join ['', [!Ref 'QSS3KeyPrefix', 'functions/packages/stackset/<OUR_ZIP_NAME>.zip']]
+        S3Key: !Join ['', [!Ref 'QSS3KeyPrefix', 'functions/packages/stackset/DruvaCloudRangerCTStackSet.zip']]
       Handler: stackset.lambda_handler
       Runtime: nodejs14.x
       Timeout: 120
@@ -408,7 +408,9 @@ Resources:
       Environment:
         Variables:
           stackSetName: !Ref StackSetName
-          orgTokenParameterName: 'DruvaCloudRangerOrganizationToken'
+          organizationIdSecretArn: !Ref 'OrganizationIdSecret'
+          organizationKeyIdSecretArn: !Ref 'OrganizationKeyIdSecret'
+          organizationTokenSecretArn: !Ref 'OrganizationTokenSecret'
           seedAccounts: !Ref LaunchAccountList
           stackSetUrl: !Ref StackSetUrl
           stackSNS: !Ref DruvaCloudRangerStackSNS

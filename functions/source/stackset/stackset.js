@@ -82,10 +82,43 @@ async function handleSNSRecord (record) {
 				console.log('Re-queued for stack set instance creation: ', JSON.stringify(publishResponse, null, 4));
 			} catch (e) {
 				console.log('Failed to send trigger for instance creation: ', JSON.stringify(e, null, 4));
-			}
+			};
 		} else {
 
+			// Retrieve secret ARN's from environment variables
+			const { organizationIdSecretArn, organizationKeyIdSecretArn, organizationTokenSecretArn } = process.env;
+
+			// Retrieve parameters from AWS Secrets Manager
+			const [ organizationId, organizationKeyId, organizationToken ] = await Promise.all([
+				getSecretValue(organizationIdSecretArn),
+				getSecretValue(organizationKeyIdSecretArn),
+				getSecretValue(organizationTokenSecretArn),
+			]);
+
+			// Create the stack instances with the parameters being populated by secrets
+			const createStackInstancesResult = await CloudFormation.createStackInstances({
+				Regions: targetRegions,
+				Accounts: targetAccounts,
+				StackSetName: stackSetName,
+				ParameterOverrides: [
+					{ ParameterKey: 'OrganizationId', ParameterValue: organizationId },
+					{ ParameterKey: 'OrganizationKeyId', ParameterValue: organizationKeyId },
+					{ ParameterKey: 'OrganizationToken', ParameterValue: organizationToken },
+				],
+			}).promise();
+
+			console.log('Created stack instances', JSON.stringify(createStackInstancesResult, null, 4));
 		}
+	};
+}
+
+async function getSecretValue (SecretId) {
+	try {
+		const SecretsManager = new AWS.SecretsManager();;
+		const { SecretString } = await SecretsManager.getSecretValue({ SecretId }).promise();
+		return SecretString;
+	} catch (e) {
+		console.log(`An error occurred when trying to fetch the secret ${SecretId}`, JSON.stringify(e, null, 4));
 	};
 }
 
