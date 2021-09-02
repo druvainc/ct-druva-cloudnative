@@ -11,10 +11,13 @@ Metadata:
         default: "Druva CloudRanger configuration"
       Parameters:
         - OrganizationToken
+        - OrganizationId
+        - OrganizationKeyId
     - Label:
         default: "Deployment configuration"
       Parameters:
         - LaunchAccountList
+        - StackRegion
         - StackSetName
         - StackSetUrl
     - Label:
@@ -24,9 +27,15 @@ Metadata:
         - QSS3KeyPrefix
   ParameterLabels:
     OrganizationToken:
-      default: Your organization token
+      default: Your organization token.
+    OrganizationId:
+      default: Your organization ID.
+    OrganizationKeyId:
+      default: Your organization key ID.
+    StackRegion:
+      default: The desired region for stack instances to be launched in.
     LaunchAccountList:
-      default: Existing AWS account ID list
+      default: Existing AWS account ID list.
     StackSetName:
       default: StackSet name.
     StackSetUrl:
@@ -45,6 +54,18 @@ Parameters:
     Description: Organization token. Please retrieve this from the CloudRanger application for your organization
     AllowedPattern: '[0-9]+'
     ConstraintDescription: Organization token has a length of 36 characters, containing letters, numbers and hyphens. (UUID v4)
+  OrganizationId:
+    Type: String
+    NoEcho: true
+    Description: Organization ID. Please retrieve this from the CloudRanger application for your organization
+    AllowedPattern: '[a-zA-Z0-9]{8}'
+    ConstraintDescription: Organization ID has a length of 8 characters, containing letters and numbers.
+  OrganizationKeyId:
+    Type: String
+    NoEcho: true
+    Description: Organization key ID. Please retrieve this from the CloudRanger application for your organization
+    AllowedPattern: '[0-9]+'
+    ConstraintDescription: Organization key ID contains only numbers
   LaunchAccountList:
     Type: String
     Description: Comma separated string of existing (enrolled with Control Tower) AWS account IDs that you wish to protect with CloudRanger. See https://docs.aws.amazon.com/general/latest/gr/acct-identifiers.html
@@ -54,6 +75,10 @@ Parameters:
     Type: String
     Description: Druva CloudRanger integration StackSet name
     Default: Druva-CloudRanger-Integration
+  StackRegion:
+    Type: String
+    Description: The desired region to deployed stacks for enrolled accounts into
+    Default: us-east-1
   StackSetUrl:
     Type: String
     Default: https://aws-quickstart.s3.amazonaws.com/quickstart-ct-druva-cloudranger/templates/druva-cloudranger-stack-set.yml  # TODO: to be updated by AWS
@@ -78,10 +103,28 @@ Resources:
     Type: AWS::SSM::Parameter
     Properties:
       Description: The Druva CloudRanger organization token
-      Name: OrganizationToken
+      Name: DruvaCloudRangerOrganizationToken
       Policies: String
       Type: String
       Value: !Ref 'OrganizationToken'
+
+  OrganizationIdParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: The Druva CloudRanger organization ID
+      Name: DruvaCloudRangerOrganizationId
+      Policies: String
+      Type: String
+      Value: !Ref 'OrganizationId'
+
+  OrganizationKeyIdparameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: The Druva CloudRanger organization key ID
+      Name: DruvaCloudRangerOrganizationKeyId
+      Policies: String
+      Type: String
+      Value: !Ref 'OrganizationKeyId'
 
   #############################
   ## BUCKET WITH LAMBDA CODE ##
@@ -208,8 +251,8 @@ Resources:
         S3Bucket: !Ref LambdaZipsBucket
         S3Key: !Join ['', [!Ref 'QSS3KeyPrefix', 'functions/packages/onboarding/<OUR_ZIP_NAME>.zip']] # TODO: Set path to onboarding zip
       Handler: onboarding.lambda_handler
-      Runtime: python3.7
-      Timeout: 120
+      Runtime: nodejs14.x
+      Timeout: 900
       Environment:
         Variables:
           stackSetName: !Ref StackSetName
@@ -217,6 +260,7 @@ Resources:
           seedAccounts: !Ref LaunchAccountList
           stackSetUrl: !Ref StackSetUrl
           stackSNS: !Ref DruvaCloudRangerStackSNS
+          stackRegion: !Ref StackRegion
       Role: !GetAtt DruvaCloudRangerOnboardingFunctionRole.Arn
 
   DruvaCloudRangerOnboardingFunctionRole:
@@ -359,16 +403,17 @@ Resources:
         S3Bucket: !Ref LambdaZipsBucket
         S3Key: !Join ['', [!Ref 'QSS3KeyPrefix', 'functions/packages/stackset/<OUR_ZIP_NAME>.zip']]
       Handler: stackset.lambda_handler
-      Runtime: python3.7
+      Runtime: nodejs14.x
       Timeout: 120
       ReservedConcurrentExecutions: 1
       Environment:
         Variables:
           stackSetName: !Ref StackSetName
-          organizationToken: !Ref OrganizationToken
+          orgTokenParameterName: 'DruvaCloudRangerOrganizationToken'
           seedAccounts: !Ref LaunchAccountList
           stackSetUrl: !Ref StackSetUrl
           stackSNS: !Ref DruvaCloudRangerStackSNS
+          stackRegion: !Ref StackRegion
       Role: !GetAtt DruvaCloudRangerStackSetFunctionRole.Arn
 
   ##########################

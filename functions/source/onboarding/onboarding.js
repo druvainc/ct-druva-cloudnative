@@ -1,12 +1,19 @@
+/**
+ * This function will be executed when first running the template in the management account or for cleaning up the installation in the management account
+ * @param {*} event
+ * @param {*} context
+ * @returns
+ */
+
 exports.handler = async (event, context) => {
 	console.log('Received event', JSON.stringify(event, null, 4));
 
 	try {
 		if (['create', 'update'].includes(event.RequestType)) {
-			await createOrUpdateStackSet(context);
+			return createOrUpdateStackSet(context);
 		} else if (['delete'].includes(event.RequestType)) {
-			await deleteStackSet(context);
-		};
+			return deleteStackSet(context);
+		}
 	} catch (e) {
 		console.log('Onboarding function has encountered an error', JSON.stringify(e, null, 4));
 	}
@@ -18,7 +25,7 @@ exports.handler = async (event, context) => {
  * 2. Create a stack set for each target account provided
  * @param  {} context
  */
-async function createOrUpdateStackSet (context) {
+async function createOrUpdateStackSet(context) {
 	const {
 		stackSNS,
 		stackSetUrl,
@@ -27,7 +34,7 @@ async function createOrUpdateStackSet (context) {
 		organizationToken,
 	} = process.env;
 
-	const [ , , , regionName, managementAccountId ] = context.invoked_function_arn.split(':');
+	const [, , , regionName, managementAccountId] = context.invoked_function_arn.split(':');
 
 	const AWS = require('aws-sdk');
 	const CloudFormation = new AWS.CloudFormation();
@@ -107,11 +114,8 @@ async function createOrUpdateStackSet (context) {
  * 2. Delete stack set instance in management account
  * @param  {} context
  */
-async function deleteStackSet (context) {
+async function deleteStackSet(context) {
 	const { stackSetName } = process.env;
-
-	const [ , , , regionName, managementAccountId ] = context.invoked_function_arn.split(':');
-
 	const CloudFormation = new AWS.CloudFormation();
 
 	// Verify the management account stack set exists
@@ -138,11 +142,41 @@ async function deleteStackSet (context) {
 		};
 	});
 
+	// If there are any accounts where a stack set instance is deployed, delete their stack instances
+	if (accountList.length) {
+		const waitTime = 30 // seconds
+		let remainingTime = (context.get_remaining_time_in_millis() - 100) / 1000 // remaining time in seconds
+		const { OperationId } = await CloudFormation.deleteStackInstances({
+			Regions: regionList,
+			Accounts: accountList,
+			StackSetName: stackSetName,
+			RetainStacks: false,
+		}).promise();
 
+		let status = 'RUNNING';
 
+		// Repeat the describe operation until it's complete or there's no time left
+		while (status === 'RUNNING' && remainingTime > 0) {
+			await wait(waitTime);
+
+			remainingTime -= waitTime
+
+			const describeStackSetOperationResult = await CloudFormation.describeStackSetOperation({ StackSetName: stackSetName, OperationId }).promise();
+
+			status = describeStackSetOperationResult.StackSetOperation.Status;
+
+			console.log(`Stackset instances deletion status: ${status}`);
+		}
+
+		// Attempt to delete the management account stack set
+		const deleteStackSetResult = await CloudFormation.deleteStackSet({ StackSetName: stackSetName }).promise();
+		console.log('Initiated delete for management stack set: ', JSON.stringify(deleteStackSetResult, null, 4));
+	}
+
+	return;
 }
 
-async function getAllStackSetInstances (stackSetName) {
+async function getAllStackSetInstances(stackSetName) {
 	const stackSets = [];
 
 	async function getStackSetInstances(stackSetName, nextToken) {
@@ -156,11 +190,15 @@ async function getAllStackSetInstances (stackSetName) {
 		stackSets.push(...Summaries);
 
 		if (NextToken) {
-			await getAllStackSetInstances(stackSetName, NextToken);
+			await getStackSetInstances(stackSetName, NextToken);
 		} else {
 			return stackSets;
 		};
 	}
 
 	return getStackSetInstances(stackSetName);
+}
+
+function wait (timeInMillis) {
+	return new Promise(resolve => setTimeout(() => resolve(), timeInMillis));
 }
