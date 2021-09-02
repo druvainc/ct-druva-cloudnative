@@ -95,36 +95,35 @@ Parameters:
 ## RESOURCES  ##
 ################
 Resources:
+  LambdaZipsBucket:
+    Type: AWS::S3::Bucket
 
-  ###########################
-  ## PARAMETER STORE VALUE ##
-  ###########################
-  OrganizationTokenParameter:
-    Type: AWS::SSM::Parameter
+  ############################
+  ## SECRET MANAGER SECRETS ##
+  ############################
+  OrganizationTokenSecret:
+    Type: AWS::SecretsManager::Secret
     Properties:
       Description: The Druva CloudRanger organization token
       Name: DruvaCloudRangerOrganizationToken
-      Policies: String
-      Type: String
-      Value: !Ref 'OrganizationToken'
+      SecretString:
+        !Ref 'OrganizationToken'
 
-  OrganizationIdParameter:
-    Type: AWS::SSM::Parameter
+  OrganizationIdSecret:
+    Type: AWS::SecretsManager::Secret
     Properties:
       Description: The Druva CloudRanger organization ID
       Name: DruvaCloudRangerOrganizationId
-      Policies: String
-      Type: String
-      Value: !Ref 'OrganizationId'
+      SecretString:
+        !Ref 'OrganizationId'
 
-  OrganizationKeyIdparameter:
-    Type: AWS::SSM::Parameter
+  OrganizationKeyIdSecret:
+    Type: AWS::SecretsManager::Secret
     Properties:
       Description: The Druva CloudRanger organization key ID
       Name: DruvaCloudRangerOrganizationKeyId
-      Policies: String
-      Type: String
-      Value: !Ref 'OrganizationKeyId'
+      SecretString:
+        !Ref 'OrganizationKeyId'
 
   #############################
   ## BUCKET WITH LAMBDA CODE ##
@@ -331,7 +330,7 @@ Resources:
       - DruvaCloudRangerFirstLaunchStackSNSSubscription
     Properties:
       ServiceToken:
-        !GetAtt DruvaCloudRangerFirstLaunchOnboardingFunction.Arn
+        !GetAtt DruvaCloudRangerOnboardingFunction.Arn
 
   ##############################
   ## STACKSET LAMBDA FUNCTION ##
