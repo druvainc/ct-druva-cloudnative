@@ -8,16 +8,28 @@ const AWS = require('aws-sdk');
  */
 exports.handler = async (event, context) => {
 	console.log('Received event', JSON.stringify(event, null, 4));
+	const responder = require('cfn-custom-resource');
 
 	try {
 		if ('Records' in event) {
 			// Handle SNS event from onboarding
 			return handleSNSRecords(event.Records);
 		} else if (event?.detail?.eventName === 'CreateManagedAccount') {
-
+			// Handle lifecycle event from control tower
 		};
+
+		return responder.sendResponse({
+			Status: 'SUCCESS',
+			PhysicalResourceId: event.PhysicalResourceId || context.logStreamName,
+		}, event);
 	} catch (e) {
 		console.log('Encountered an error: ', JSON.stringify(e, null, 4));
+
+		return responder.sendResponse({
+			Status: 'SUCCESS',
+			Reason: "See the details in CloudWatch Log Stream: " + context.logStreamName,
+			PhysicalResourceId: event.PhysicalResourceId || context.logStreamName,
+		}, event);
 	}
 }
 
@@ -42,14 +54,14 @@ async function handleSNSRecords (records) {
 async function handleSNSRecord (record) {
 	const SNS = new AWS.SNS();
 	const CloudFormation = new AWS.CloudFormation();
-	const { stackSNS } = process.env
+	const { stackSNS, stackRegion } = process.env
 
 	const promises = [];
 
 	for (const [stackSetName, { targetAccounts, targetRegions }] of Object.entries(record)) {
 		console.log(`Processing stackset instances for ${stackSetName}`);
 		console.log(`Target accounts: ${targetAccounts}`);
-		console.log(`Target regions: ${targetRegions}`);
+		console.log(`Target region: ${stackRegion}`);
 
 		// Verify the management stack set exists
 		try {
@@ -86,25 +98,19 @@ async function handleSNSRecord (record) {
 		} else {
 
 			// Retrieve secret ARN's from environment variables
-			const { organizationIdSecretArn, organizationKeyIdSecretArn, organizationTokenSecretArn } = process.env;
+			// const { organizationKeyIdSecretArn, organizationTokenSecretArn } = process.env;
 
 			// Retrieve parameters from AWS Secrets Manager
-			const [ organizationId, organizationKeyId, organizationToken ] = await Promise.all([
-				getSecretValue(organizationIdSecretArn),
-				getSecretValue(organizationKeyIdSecretArn),
-				getSecretValue(organizationTokenSecretArn),
-			]);
+			// const [ organizationKeyId, organizationToken ] = await Promise.all([
+			// 	getSecretValue(organizationKeyIdSecretArn),
+			// 	getSecretValue(organizationTokenSecretArn),
+			// ]);
 
 			// Create the stack instances with the parameters being populated by secrets
 			const createStackInstancesResult = await CloudFormation.createStackInstances({
 				Regions: targetRegions,
 				Accounts: targetAccounts,
 				StackSetName: stackSetName,
-				ParameterOverrides: [
-					{ ParameterKey: 'OrganizationId', ParameterValue: organizationId },
-					{ ParameterKey: 'OrganizationKeyId', ParameterValue: organizationKeyId },
-					{ ParameterKey: 'OrganizationToken', ParameterValue: organizationToken },
-				],
 			}).promise();
 
 			console.log('Created stack instances', JSON.stringify(createStackInstancesResult, null, 4));
@@ -112,15 +118,15 @@ async function handleSNSRecord (record) {
 	};
 }
 
-async function getSecretValue (SecretId) {
-	try {
-		const SecretsManager = new AWS.SecretsManager();;
-		const { SecretString } = await SecretsManager.getSecretValue({ SecretId }).promise();
-		return SecretString;
-	} catch (e) {
-		console.log(`An error occurred when trying to fetch the secret ${SecretId}`, JSON.stringify(e, null, 4));
-	};
-}
+// async function getSecretValue (SecretId) {
+// 	try {
+// 		const SecretsManager = new AWS.SecretsManager();;
+// 		const { SecretString } = await SecretsManager.getSecretValue({ SecretId }).promise();
+// 		return SecretString;
+// 	} catch (e) {
+// 		console.log(`An error occurred when trying to fetch the secret ${SecretId}`, JSON.stringify(e, null, 4));
+// 	};
+// }
 
 async function getAllStackSetOperations(stackSetName) {
 	const stackSetOperations = [];
@@ -144,12 +150,12 @@ async function getAllStackSetOperations(stackSetName) {
 	return getStackSetOperations(stackSetName);
 }
 
-async function getOrgToken () {
-	const SSM = new AWS.SSM();
-	const { Parameter: { Value } } = await SSM.getParameter({ Name: 'DruvaCloudRangerOrgToken', }).promise()
+// async function getOrgToken () {
+// 	const SSM = new AWS.SSM();
+// 	const { Parameter: { Value } } = await SSM.getParameter({ Name: 'DruvaCloudRangerOrgToken', }).promise()
 
-	return Value;
-}
+// 	return Value;
+// }
 
 function wait (timeInMillis) {
 	return new Promise(resolve => setTimeout(() => resolve(), timeInMillis));

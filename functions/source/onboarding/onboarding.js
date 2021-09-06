@@ -4,18 +4,31 @@
  * @param {*} context
  * @returns
  */
-
 exports.handler = async (event, context) => {
+	const responder = require('cfn-custom-resource');
 	console.log('Received event', JSON.stringify(event, null, 4));
 
 	try {
-		if (['create', 'update'].includes(event.RequestType)) {
-			return createOrUpdateStackSet(context);
-		} else if (['delete'].includes(event.RequestType)) {
-			return deleteStackSet(context);
+		if (['Create', 'Update'].includes(event.RequestType)) {
+			await createOrUpdateStackSet(context);
+		} else if (['Delete'].includes(event.RequestType)) {
+			await deleteStackSet(context);
 		}
+
+		return responder.sendResponse({
+			Status: 'SUCCESS',
+			PhysicalResourceId: event.PhysicalResourceId || context.logStreamName,
+		}, event)
+
 	} catch (e) {
+		console.log('8')
 		console.log('Onboarding function has encountered an error', JSON.stringify(e, null, 4));
+
+		return responder.sendResponse({
+			Status: 'SUCCESS',
+			Reason: "See the details in CloudWatch Log Stream: " + context.logStreamName,
+			PhysicalResourceId: event.PhysicalResourceId || context.logStreamName,
+		}, event)
 	}
 }
 
@@ -28,13 +41,15 @@ exports.handler = async (event, context) => {
 async function createOrUpdateStackSet(context) {
 	const {
 		stackSNS,
+		stackRegion,
 		stackSetUrl,
 		stackSetName,
 		seedAccounts = '',
 		organizationToken,
+		organizationKeyId,
 	} = process.env;
 
-	const [, , , regionName, managementAccountId] = context.invoked_function_arn.split(':');
+	const [, , , regionName, managementAccountId] = context.invokedFunctionArn.split(':');
 
 	const AWS = require('aws-sdk');
 	const CloudFormation = new AWS.CloudFormation();
@@ -64,6 +79,12 @@ async function createOrUpdateStackSet(context) {
 				ParameterValue: organizationToken,
 				UsePreviousValue: false,
 				ResolvedValue: 'string',
+			},
+			{
+				ParameterKey: 'OrganizationKeyId',
+				ParameterValue: organizationKeyId,
+				UsePreviousValue: false,
+				ResolvedValue: 'string',
 			}
 		],
 		Capabilities: [
@@ -90,7 +111,7 @@ async function createOrUpdateStackSet(context) {
 		const message = {
 			stackSetName: {
 				targetAccounts: accountIdList,
-				targetRegions: [regionName]
+				targetRegions: [stackRegion]
 			}
 		};
 
@@ -115,18 +136,23 @@ async function createOrUpdateStackSet(context) {
  * @param  {} context
  */
 async function deleteStackSet(context) {
+	const AWS = require('aws-sdk');
 	const { stackSetName } = process.env;
 	const CloudFormation = new AWS.CloudFormation();
 
+	console.log('1')
 	// Verify the management account stack set exists
 	try {
+		console.log('2')
 		await CloudFormation.describeStackSet({ StackSetName: stackSetName }).promise();
 	} catch (e) {
+		console.log('3')
 		console.log(`Stack set ${stackSetName} does not exist`);
-		return;
+		return true;
 	}
 
 	// Describe all stack set instances
+	console.log('4')
 	const stackSetInstances = await getAllStackSetInstances(stackSetName);
 
 	const regionList = [];
@@ -142,10 +168,11 @@ async function deleteStackSet(context) {
 		};
 	});
 
+	console.log('5')
 	// If there are any accounts where a stack set instance is deployed, delete their stack instances
 	if (accountList.length) {
 		const waitTime = 30 // seconds
-		let remainingTime = (context.get_remaining_time_in_millis() - 100) / 1000 // remaining time in seconds
+		let remainingTime = (context.getRemainingTimeInMillis() - 100) / 1000 // remaining time in seconds
 		const { OperationId } = await CloudFormation.deleteStackInstances({
 			Regions: regionList,
 			Accounts: accountList,
@@ -167,12 +194,15 @@ async function deleteStackSet(context) {
 
 			console.log(`Stackset instances deletion status: ${status}`);
 		}
-
+	}
+	try {
 		// Attempt to delete the management account stack set
 		const deleteStackSetResult = await CloudFormation.deleteStackSet({ StackSetName: stackSetName }).promise();
 		console.log('Initiated delete for management stack set: ', JSON.stringify(deleteStackSetResult, null, 4));
+	} catch (e) {
+		console.log('A problem occurred while trying to delete the stack set', JSON.stringify(e, null, 4))
 	}
-
+	console.log('6')
 	return;
 }
 
@@ -180,6 +210,7 @@ async function getAllStackSetInstances(stackSetName) {
 	const stackSets = [];
 
 	async function getStackSetInstances(stackSetName, nextToken) {
+		const AWS = require('aws-sdk');
 		const CloudFormation = new AWS.CloudFormation();
 		const listStackInstancesParams = {
 			NextToken: nextToken,
@@ -199,6 +230,6 @@ async function getAllStackSetInstances(stackSetName) {
 	return getStackSetInstances(stackSetName);
 }
 
-function wait (timeInMillis) {
+function wait(timeInMillis) {
 	return new Promise(resolve => setTimeout(() => resolve(), timeInMillis));
 }

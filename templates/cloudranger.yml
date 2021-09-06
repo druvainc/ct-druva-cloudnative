@@ -7,12 +7,6 @@ Parameters:
     Description: Organization token. Please retrieve this from the CloudRanger application for your organization
     AllowedPattern: '[0-9]+'
     ConstraintDescription: Organization token has a length of 36 characters, containing letters, numbers and hyphens. (UUID v4)
-  OrganizationId:
-    Type: String
-    NoEcho: true
-    Description: Organization ID. Please retrieve this from the CloudRanger application for your organization
-    AllowedPattern: '[a-zA-Z0-9]{8}'
-    ConstraintDescription: Organization ID has a length of 8 characters, containing letters and numbers.
   OrganizationKeyId:
     Type: String
     NoEcho: true
@@ -47,10 +41,9 @@ Resources:
               AWS: 'arn:aws:iam::558211695259:role/cloudranger-v2-prod-lambda'
             Condition:
               StringEquals:
-                'sts:ExternalId': !Join
-                  - ''
-                  - - 'cloudranger_'
-                    - !Ref 'OrganizationId'
+                - !GetAtt
+                  - CloudRangerInitializeSNSProvisioner
+                  - ExternalId
       Path: /
       Policies:
         - PolicyDocument:
@@ -714,10 +707,9 @@ Resources:
       ARN: !GetAtt
         - CloudRanger
         - Arn
-      ExternalId: !Join
-        - ''
-        - - 'cloudranger_'
-          - !Ref 'OrganizationId'
+      ExternalId: !GetAtt
+        - CloudRangerInitializeSNSProvisioner
+        - ExternalId
       Region: !Ref 'AWS::Region'
       AccountId: !Ref 'AWS::AccountId'
       Step: Finalize

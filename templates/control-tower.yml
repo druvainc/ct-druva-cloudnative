@@ -11,7 +11,6 @@ Metadata:
         default: "Druva CloudRanger configuration"
       Parameters:
         - OrganizationToken
-        - OrganizationId
         - OrganizationKeyId
     - Label:
         default: "Deployment configuration"
@@ -28,8 +27,6 @@ Metadata:
   ParameterLabels:
     OrganizationToken:
       default: Your organization token.
-    OrganizationId:
-      default: Your organization ID.
     OrganizationKeyId:
       default: Your organization key ID.
     StackRegion:
@@ -52,14 +49,6 @@ Parameters:
     Type: String
     NoEcho: true
     Description: Organization token. Please retrieve this from the CloudRanger application for your organization
-    AllowedPattern: '[0-9]+'
-    ConstraintDescription: Organization token has a length of 36 characters, containing letters, numbers and hyphens. (UUID v4)
-  OrganizationId:
-    Type: String
-    NoEcho: true
-    Description: Organization ID. Please retrieve this from the CloudRanger application for your organization
-    AllowedPattern: '[a-zA-Z0-9]{8}'
-    ConstraintDescription: Organization ID has a length of 8 characters, containing letters and numbers.
   OrganizationKeyId:
     Type: String
     NoEcho: true
@@ -81,22 +70,22 @@ Parameters:
     Default: us-east-1
   StackSetUrl:
     Type: String
-    Default: https://aws-quickstart.s3.amazonaws.com/quickstart-ct-druva-cloudranger/templates/druva-cloudranger-stack-set.yml  # TODO: to be updated by AWS
+    Default: https://druva-cloudranger-ct-assets-demo.s3.amazonaws.com/cloudranger.yml  # TODO: to be updated by AWS
     Description: Druva CloudRanger integration StackSet template URL
-  QSS3BucketName:
-    Type: String
-    Default: aws-quickstart
-    Description: "S3 bucket for Quick Start assets. Use this if you want to customize your deployment. The bucket name can include numbers, lowercase letters, uppercase letters, and hyphens, but it cannot start or end with hyphens (-)."
-  QSS3KeyPrefix:
-    Type: String
-    Default: quickstart-ct-druva-cloudranger/ # TODO: to be updated by AWS
-    Description: "S3 key prefix to simulate a directory for Quick Start assets. Use this if you want to customize your deployment. The prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slashes (/). For more information, see https://docs.aws.amazon.com/AmazonS3/latest/dev/UsingMetadata.html."
+  # QSS3BucketName:
+  #   Type: String
+  #   Default: aws-quickstart
+  #   Description: "S3 bucket for Quick Start assets. Use this if you want to customize your deployment. The bucket name can include numbers, lowercase letters, uppercase letters, and hyphens, but it cannot start or end with hyphens (-)."
+  # QSS3KeyPrefix:
+  #   Type: String
+  #   Default: quickstart-ct-druva-cloudranger/ # TODO: to be updated by AWS
+  #   Description: "S3 key prefix to simulate a directory for Quick Start assets. Use this if you want to customize your deployment. The prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slashes (/). For more information, see https://docs.aws.amazon.com/AmazonS3/latest/dev/UsingMetadata.html."
 ################
 ## RESOURCES  ##
 ################
 Resources:
-  LambdaZipsBucket:
-    Type: AWS::S3::Bucket
+  # LambdaZipsBucket:
+  #   Type: AWS::S3::Bucket
 
   ############################
   ## SECRET MANAGER SECRETS ##
@@ -109,14 +98,6 @@ Resources:
       SecretString:
         !Ref 'OrganizationToken'
 
-  OrganizationIdSecret:
-    Type: AWS::SecretsManager::Secret
-    Properties:
-      Description: The Druva CloudRanger organization ID
-      Name: DruvaCloudRangerOrganizationId
-      SecretString:
-        !Ref 'OrganizationId'
-
   OrganizationKeyIdSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
@@ -128,134 +109,137 @@ Resources:
   #############################
   ## BUCKET WITH LAMBDA CODE ##
   #############################
-  LambdaCodeBucket:
-    Type: AWS::S3::Bucket
+  # LambdaCodeBucket:
+  #   Type: AWS::S3::Bucket
 
   #####################################
   ## INVOCATION OF COPY ZIP FUNCTION ##
   #####################################
-  CopyZips:
-    Type: Custom::CopyZips
-    Properties:
-      ServiceToken: !GetAtt 'CopyZipsFunction.Arn'
-      DestBucket: !Ref 'LambdaZipsBucket'
-      SourceBucket: !Ref 'QSS3BucketName'
-      Prefix: !Ref 'QSS3KeyPrefix'
-      Objects:
-        - functions/packages/onboarding/<OUR_ZIP_NAME>.zip
+  # CopyZips:
+  #   Type: Custom::CopyZips
+  #   Properties:
+  #     ServiceToken: !GetAtt 'CopyZipsFunction.Arn'
+  #     DestBucket: !Ref 'LambdaZipsBucket'
+  #     SourceBucket: !Ref 'QSS3BucketName'
+  #     Prefix: !Ref 'QSS3KeyPrefix'
+  #     Objects:
+  #       - functions/packages/onboarding/<OUR_ZIP_NAME>.zip
 
   #######################
   ## COPY ZIP FUNCTION ##
   #######################
 
-  CopyZipsRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-      Path: /
-      Policies:
-        - PolicyName: lambda-copier
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:GetObject
-                  - s3:GetObjectTagging
-                Resource:
-                  - !Sub 'arn:aws:s3:::${QSS3BucketName}/${QSS3KeyPrefix}*'
-              - Effect: Allow
-                Action:
-                  - s3:PutObject
-                  - s3:DeleteObject
-                  - s3:PutObjectTagging
-                Resource:
-                  - !Sub 'arn:aws:s3:::${LambdaZipsBucket}/${QSS3KeyPrefix}*'
+  # CopyZipsRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Version: '2012-10-17'
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             Service: lambda.amazonaws.com
+  #           Action: sts:AssumeRole
+  #     ManagedPolicyArns:
+  #       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  #     Path: /
+  #     Policies:
+  #       - PolicyName: lambda-copier
+  #         PolicyDocument:
+  #           Version: '2012-10-17'
+  #           Statement:
+  #             - Effect: Allow
+  #               Action:
+  #                 - s3:GetObject
+  #                 - s3:GetObjectTagging
+  #               Resource:
+  #                 - !Sub 'arn:aws:s3:::${QSS3BucketName}/${QSS3KeyPrefix}*'
+  #             - Effect: Allow
+  #               Action:
+  #                 - s3:PutObject
+  #                 - s3:DeleteObject
+  #                 - s3:PutObjectTagging
+  #               Resource:
+  #                 - !Sub 'arn:aws:s3:::${LambdaZipsBucket}/${QSS3KeyPrefix}*'
 
-  CopyZipsFunction:
-    Type: AWS::Lambda::Function
-    Properties:
-      Description: Copies objects from the S3 bucket to a new location.
-      Handler: index.handler
-      Runtime: python3.7
-      Role: !GetAtt 'CopyZipsRole.Arn'
-      Timeout: 240
-      Code:
-        ZipFile: |
-          import json
-          import logging
-          import threading
-          import boto3
-          import cfnresponse
-          def copy_objects(source_bucket, dest_bucket, prefix, objects):
-              s3 = boto3.client('s3')
-              for o in objects:
-                  key = prefix + o
-                  copy_source = {
-                      'Bucket': source_bucket,
-                      'Key': key
-                  }
-                  print('copy_source: %s' % copy_source)
-                  print('dest_bucket = %s'%dest_bucket)
-                  print('key = %s' %key)
-                  s3.copy_object(CopySource=copy_source, Bucket=dest_bucket,
-                        Key=key)
-          def delete_objects(bucket, prefix, objects):
-              s3 = boto3.client('s3')
-              objects = {'Objects': [{'Key': prefix + o} for o in objects]}
-              s3.delete_objects(Bucket=bucket, Delete=objects)
-          def timeout(event, context):
-              logging.error('Execution is about to time out, sending failure response to CloudFormation')
-              cfnresponse.send(event, context, cfnresponse.FAILED, {}, None)
-          def handler(event, context):
-              # make sure we send a failure to CloudFormation if the function
-              # is going to timeout
-              timer = threading.Timer((context.get_remaining_time_in_millis()
-                        / 1000.00) - 0.5, timeout, args=[event, context])
-              timer.start()
-              print('Received event: %s' % json.dumps(event))
-              status = cfnresponse.SUCCESS
-              try:
-                  source_bucket = event['ResourceProperties']['SourceBucket']
-                  dest_bucket = event['ResourceProperties']['DestBucket']
-                  prefix = event['ResourceProperties']['Prefix']
-                  objects = event['ResourceProperties']['Objects']
-                  if event['RequestType'] == 'Delete':
-                      delete_objects(dest_bucket, prefix, objects)
-                  else:
-                      copy_objects(source_bucket, dest_bucket, prefix, objects)
-              except Exception as e:
-                  logging.error('Exception: %s' % e, exc_info=True)
-                  status = cfnresponse.FAILED
-              finally:
-                  timer.cancel()
-                  cfnresponse.send(event, context, status, {}, None)
+  # CopyZipsFunction:
+  #   Type: AWS::Lambda::Function
+  #   Properties:
+  #     Description: Copies objects from the S3 bucket to a new location.
+  #     Handler: index.handler
+  #     Runtime: python3.7
+  #     Role: !GetAtt 'CopyZipsRole.Arn'
+  #     Timeout: 240
+  #     Code:
+  #       ZipFile: |
+  #         import json
+  #         import logging
+  #         import threading
+  #         import boto3
+  #         import cfnresponse
+  #         def copy_objects(source_bucket, dest_bucket, prefix, objects):
+  #             s3 = boto3.client('s3')
+  #             for o in objects:
+  #                 key = prefix + o
+  #                 copy_source = {
+  #                     'Bucket': source_bucket,
+  #                     'Key': key
+  #                 }
+  #                 print('copy_source: %s' % copy_source)
+  #                 print('dest_bucket = %s'%dest_bucket)
+  #                 print('key = %s' %key)
+  #                 s3.copy_object(CopySource=copy_source, Bucket=dest_bucket,
+  #                       Key=key)
+  #         def delete_objects(bucket, prefix, objects):
+  #             s3 = boto3.client('s3')
+  #             objects = {'Objects': [{'Key': prefix + o} for o in objects]}
+  #             s3.delete_objects(Bucket=bucket, Delete=objects)
+  #         def timeout(event, context):
+  #             logging.error('Execution is about to time out, sending failure response to CloudFormation')
+  #             cfnresponse.send(event, context, cfnresponse.FAILED, {}, None)
+  #         def handler(event, context):
+  #             # make sure we send a failure to CloudFormation if the function
+  #             # is going to timeout
+  #             timer = threading.Timer((context.get_remaining_time_in_millis()
+  #                       / 1000.00) - 0.5, timeout, args=[event, context])
+  #             timer.start()
+  #             print('Received event: %s' % json.dumps(event))
+  #             status = cfnresponse.SUCCESS
+  #             try:
+  #                 source_bucket = event['ResourceProperties']['SourceBucket']
+  #                 dest_bucket = event['ResourceProperties']['DestBucket']
+  #                 prefix = event['ResourceProperties']['Prefix']
+  #                 objects = event['ResourceProperties']['Objects']
+  #                 if event['RequestType'] == 'Delete':
+  #                     delete_objects(dest_bucket, prefix, objects)
+  #                 else:
+  #                     copy_objects(source_bucket, dest_bucket, prefix, objects)
+  #             except Exception as e:
+  #                 logging.error('Exception: %s' % e, exc_info=True)
+  #                 status = cfnresponse.FAILED
+  #             finally:
+  #                 timer.cancel()
+  #                 cfnresponse.send(event, context, status, {}, None)
 
   #########################
   ## ONBOARDING FUNCTION ##
   #########################
   DruvaCloudRangerOnboardingFunction:
     Type: AWS::Lambda::Function
-    DependsOn: CopyZips
+    # DependsOn: CopyZips
     Properties:
       Code:
-        S3Bucket: !Ref LambdaZipsBucket
-        S3Key: !Join ['', [!Ref 'QSS3KeyPrefix', 'functions/packages/onboarding/DruvaCloudRangerOnboarding.zip']] # TODO: Set path to onboarding zip
-      Handler: onboarding.lambda_handler
+        S3Bucket: 'druva-cloudranger-ct-assets-demo'
+        S3Key: 'onboarding.zip'
+        # S3Bucket: !Ref LambdaZipsBucket
+        # S3Key: !Join ['', [!Ref 'QSS3KeyPrefix', 'functions/packages/onboarding/DruvaCloudRangerOnboarding.zip']]
+      Handler: onboarding.handler
       Runtime: nodejs14.x
       Timeout: 900
       Environment:
         Variables:
           stackSetName: !Ref StackSetName
           organizationToken: !Ref OrganizationToken
+          organizationKeyId: !Ref OrganizationKeyId
           seedAccounts: !Ref LaunchAccountList
           stackSetUrl: !Ref StackSetUrl
           stackSNS: !Ref DruvaCloudRangerStackSNS
@@ -299,14 +283,14 @@ Resources:
             - cloudformation:CreateStackSet
             - cloudformation:DescribeStackSet
             Resource:
-              !Join ['', ['arn:aws:cloudformation:', '*', ':', '*', ':stackset/DruvaCloudRangerFirstLaunch-*' ]]
-          - Sid: S3Ops
-            Effect: Allow
-            Action:
-            - s3:ListBucket
-            - s3:GetObject
-            Resource:
-            - !Join ['',['arn:aws:s3:::', !Ref QSS3BucketName, '/', !Ref QSS3KeyPrefix, '*']]
+              !Join ['', ['arn:aws:cloudformation:', '*', ':', '*', ':stackset/', !Ref StackSetName, '*' ]]
+          # - Sid: S3Ops
+          #   Effect: Allow
+          #   Action:
+          #   - s3:ListBucket
+          #   - s3:GetObject
+          #   Resource:
+          #   - !Join ['',['arn:aws:s3:::', !Ref QSS3BucketName, '/', !Ref QSS3KeyPrefix, '*']]
           - Sid: SNSOps
             Effect: Allow
             Action:
@@ -327,7 +311,7 @@ Resources:
   DruvaCloudRangerFirstLaunch:
     Type: AWS::CloudFormation::CustomResource
     DependsOn:
-      - DruvaCloudRangerFirstLaunchStackSNSSubscription
+      - DruvaCloudRangerStackSNSSubscription
     Properties:
       ServiceToken:
         !GetAtt DruvaCloudRangerOnboardingFunction.Arn
@@ -369,6 +353,13 @@ Resources:
         PolicyDocument:
           Version: 2012-10-17
           Statement:
+          - Sid: SecretRead
+            Effect: Allow
+            Action:
+            - secretsmanager:GetSecretValue
+            Resource:
+              - !Ref OrganizationKeyIdSecret
+              - !Ref OrganizationTokenSecret
           - Sid: StackSetInstanceOperations
             Effect: Allow
             Action:
@@ -396,19 +387,19 @@ Resources:
 
   DruvaCloudRangerStackSetFunction:
     Type: AWS::Lambda::Function
-    DependsOn: CopyZips
     Properties:
       Code:
-        S3Bucket: !Ref LambdaZipsBucket
-        S3Key: !Join ['', [!Ref 'QSS3KeyPrefix', 'functions/packages/stackset/DruvaCloudRangerCTStackSet.zip']]
-      Handler: stackset.lambda_handler
+        S3Bucket: 'druva-cloudranger-ct-assets-demo'
+        S3Key: 'stackset.zip'
+        # S3Bucket: !Ref LambdaZipsBucket
+        # S3Key: !Join ['', [!Ref 'QSS3KeyPrefix', 'functions/packages/stackset/DruvaCloudRangerCTStackSet.zip']]
+      Handler: stackset.handler
       Runtime: nodejs14.x
       Timeout: 120
       ReservedConcurrentExecutions: 1
       Environment:
         Variables:
           stackSetName: !Ref StackSetName
-          organizationIdSecretArn: !Ref 'OrganizationIdSecret'
           organizationKeyIdSecretArn: !Ref 'OrganizationKeyIdSecret'
           organizationTokenSecretArn: !Ref 'OrganizationTokenSecret'
           seedAccounts: !Ref LaunchAccountList
