@@ -16,6 +16,7 @@ exports.handler = async (event, context) => {
 			return handleSNSRecords(event.Records);
 		} else if (event?.detail?.eventName === 'CreateManagedAccount') {
 			// Handle lifecycle event from control tower
+			return handleLifecycleEvent(event);
 		};
 
 		return responder.sendResponse({
@@ -26,10 +27,40 @@ exports.handler = async (event, context) => {
 		console.log('Encountered an error: ', JSON.stringify(e, null, 4));
 
 		return responder.sendResponse({
-			Status: 'SUCCESS',
+			Status: 'FAILED',
 			Reason: "See the details in CloudWatch Log Stream: " + context.logStreamName,
 			PhysicalResourceId: event.PhysicalResourceId || context.logStreamName,
 		}, event);
+	}
+}
+
+async function handleLifecycleEvent (event) {
+	if (!event.detail?.serviceEventDetails?.createManagedAccountStatus?.state == 'SUCCEEDED') {
+		console.log('Invalid event state, expected: \'SUCCEEDED\'');
+		throw 'Invalid event state, expected: \'SUCCEEDED\'';
+	};
+
+	const accountId = event.detail?.serviceEventDetails?.createManagedAccountStatus?.account?.accountId;
+	const { stackSetName, stackRegion } = process.env;
+
+	console.log(`Processing lifecycle event for ${accountId}`);
+
+	const stackSetInstances = await getAllStackInstances(stackSetName, accountId);
+
+	console.log(`Found ${stackSetInstances.length} instances for stack set ${stackSetName}`);
+
+	if (stackSetInstances.length === 0) {
+		console.log(`Creating a new stack set instance for stack set ${stackSetName}, ${stackRegion}, ${accountId}`);
+		const record = {
+			[stackSetName]: {
+				targetAccounts: [accountId],
+				targetRegions: [stackRegion],
+			}
+		}
+		return handleSNSRecord(record)
+
+	} else {
+		console.log(`Stack set instance already exists for stack set ${stackSetName}, ${stackRegion}, ${accountId}`);
 	}
 }
 
@@ -54,11 +85,9 @@ async function handleSNSRecords (records) {
 async function handleSNSRecord (record) {
 	const SNS = new AWS.SNS();
 	const CloudFormation = new AWS.CloudFormation();
-	const { stackSNS, stackRegion } = process.env
+	const { stackSNS, stackRegion } = process.env;
 
-	const promises = [];
-
-	for (const [stackSetName, { targetAccounts, targetRegions }] of Object.entries(record)) {
+	const promises = Object.entries(record).map(async ([stackSetName, { targetAccounts, targetRegions }]) => {
 		console.log(`Processing stackset instances for ${stackSetName}`);
 		console.log(`Target accounts: ${targetAccounts}`);
 		console.log(`Target region: ${stackRegion}`);
@@ -115,7 +144,9 @@ async function handleSNSRecord (record) {
 
 			console.log('Created stack instances', JSON.stringify(createStackInstancesResult, null, 4));
 		}
-	};
+	});
+
+	return Promise.all(promises);
 }
 
 // async function getSecretValue (SecretId) {
@@ -148,6 +179,29 @@ async function getAllStackSetOperations(stackSetName) {
 	}
 
 	return getStackSetOperations(stackSetName);
+}
+
+async function getAllStackInstances(stackSetName, accountId) {
+	const stackInstances = [];
+
+	async function getStackInstances(stackSetName, nextToken) {
+		const CloudFormation = new AWS.CloudFormation();
+		const listStackInstancesParams = {
+			NextToken: nextToken,
+			StackSetName: stackSetName,
+			StackInstanceAccount: accountId
+		};
+		const { Summaries, NextToken } = await CloudFormation.listStackInstances(listStackInstancesParams).promise();
+		stackInstances.push(...Summaries);
+
+		if (NextToken) {
+			await getStackInstances(stackSetName, NextToken);
+		} else {
+			return stackInstances;
+		};
+	}
+
+	return getStackInstances(stackSetName);
 }
 
 // async function getOrgToken () {

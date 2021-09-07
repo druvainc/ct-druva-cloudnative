@@ -109,7 +109,7 @@ async function createOrUpdateStackSet(context) {
 		const SNS = new AWS.SNS();
 		const accountIdList = seedAccounts.split(',');
 		const message = {
-			stackSetName: {
+			[stackSetName]: {
 				targetAccounts: accountIdList,
 				targetRegions: [stackRegion]
 			}
