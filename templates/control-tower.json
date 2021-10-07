@@ -518,7 +518,7 @@
                         ]
                     },
                     "detail-type": [
-                        "AWS service event via AWS CloudTrail"
+                        "AWS Service Event via CloudTrail"
                     ],
                     "source": [
                         "aws.controltower"
