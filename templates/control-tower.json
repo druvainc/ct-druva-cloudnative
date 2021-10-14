@@ -22,8 +22,7 @@
                 "Parameters": [
                     "LaunchAccountList",
                     "StackRegion",
-                    "StackSetName",
-                    "StackSetUrl"
+                    "StackSetName"
                 ]
             },
             {
@@ -51,9 +50,6 @@
             },
             "StackSetName": {
                 "default": "StackSet name."
-            },
-            "StackSetUrl": {
-                "default": "StackSet template URL."
             },
             "QSS3BucketName": {
                 "default": "Quick Start S3 bucket name."
@@ -91,11 +87,6 @@
             "Type": "String",
             "Description": "The desired region to deployed stacks for enrolled accounts into",
             "Default": "us-east-1"
-        },
-        "StackSetUrl": {
-            "Type": "String",
-            "Default": "https://druva-cloudranger-ct-assets-demo.s3.amazonaws.com/cloudranger.json",
-            "Description": "Druva CloudRanger integration StackSet template URL"
         }
     },
     "Resources": {
@@ -142,9 +133,6 @@
                         },
                         "seedAccounts": {
                             "Ref": "LaunchAccountList"
-                        },
-                        "stackSetUrl": {
-                            "Ref": "StackSetUrl"
                         },
                         "stackSNS": {
                             "Ref": "DruvaCloudRangerStackSNS"
@@ -483,9 +471,6 @@
                         },
                         "seedAccounts": {
                             "Ref": "LaunchAccountList"
-                        },
-                        "stackSetUrl": {
-                            "Ref": "StackSetUrl"
                         },
                         "stackSNS": {
                             "Ref": "DruvaCloudRangerStackSNS"

@@ -42,7 +42,6 @@ async function createOrUpdateStackSet (context) {
 	const {
 		stackSNS,
 		stackRegion,
-		stackSetUrl,
 		stackSetName,
 		seedAccounts = '',
 		organizationToken,
@@ -72,7 +71,8 @@ async function createOrUpdateStackSet (context) {
 	await CloudFormation.createStackSet({
 		StackSetName: stackSetName,
 		Description: 'Control Tower Management account stack set responsible for orchestrating any enrolled accounts\' setup with Druva CloudRanger',
-		TemplateURL: stackSetUrl,
+		// TemplateURL: stackSetUrl,
+		TemplateBody: JSON.stringify(require('./cloudranger-template.json')),
 		Parameters: [
 			{
 				ParameterKey: 'OrganizationToken',
