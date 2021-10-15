@@ -16,17 +16,19 @@
 
 ## Linting JavaScript
 Install ESLint
-> npm install -g eslint
 
-> eslint .
+    npm install -g eslint
+
+    eslint .
 
 ## Linting CloudFormation templates
 Install cfn-lint
-> npm install -g cfn-lint
 
-> cfn-lint validate templates/cloudranger.json
+    npm install -g cfn-lint
 
-> cfn-lint validate templates/control-tower.json
+    cfn-lint validate templates/cloudranger.json
+
+    cfn-lint validate templates/control-tower.json
 
 # Setting up
 Please find the deployment guide here: <link to deployment guide>
