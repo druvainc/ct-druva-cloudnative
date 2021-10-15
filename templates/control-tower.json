@@ -27,11 +27,10 @@
             },
             {
                 "Label": {
-                    "default": "AWS Quick Start configuration"
+                    "default": "AWS Lambda code hosting configuration"
                 },
                 "Parameters": [
-                    "QSS3BucketName",
-                    "QSS3KeyPrefix"
+                    "BucketName"
                 ]
             }
         ],
@@ -51,11 +50,8 @@
             "StackSetName": {
                 "default": "StackSet name."
             },
-            "QSS3BucketName": {
-                "default": "Quick Start S3 bucket name."
-            },
-            "QSS3KeyPrefix": {
-                "default": "Quick Start S3 key prefix."
+            "BucketName": {
+                "default": "AWS Lambda code hosting S3 bucket name."
             }
         }
     },
@@ -87,9 +83,113 @@
             "Type": "String",
             "Description": "The desired region to deployed stacks for enrolled accounts into",
             "Default": "us-east-1"
+        },
+        "BucketName": {
+            "Type": "String",
+            "Default": "druva-cloudranger-ct-assets-demo",
+            "Description": "S3 bucket for the control tower deployment assets. Use this if you want to customize your deployment. The bucket name can include numbers, lowercase letters, uppercase letters, and hyphens, but it cannot start or end with hyphens (-)."
         }
     },
     "Resources": {
+		"LambdaZipsBucket": {
+            "Type": "AWS::S3::Bucket"
+        },
+        "CopyZips": {
+            "Type": "Custom::CopyZips",
+            "Properties": {
+                "ServiceToken": {
+                    "Fn::GetAtt": [
+                        "CopyZipsFunction",
+                        "Arn"
+                    ]
+                },
+                "DestBucket": {
+                    "Ref": "LambdaZipsBucket"
+                },
+                "SourceBucket": {
+                    "Ref": "BucketName"
+                },
+                "Prefix": "",
+                "Objects": [
+                    "onboarding.zip",
+                    "stackset.zip"
+                ]
+            }
+        },
+        "CopyZipsRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "lambda.amazonaws.com"
+                            },
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                },
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                ],
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "lambda-copier",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "s3:GetObject",
+                                        "s3:GetObjectTagging"
+                                    ],
+                                    "Resource": [
+                                        {
+                                            "Fn::Sub": "arn:aws:s3:::${BucketName}/*"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "s3:PutObject",
+                                        "s3:DeleteObject",
+                                        "s3:PutObjectTagging"
+                                    ],
+                                    "Resource": [
+                                        {
+                                            "Fn::Sub": "arn:aws:s3:::${LambdaZipsBucket}/*"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "CopyZipsFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Description": "Copies objects from the S3 bucket to a new location.",
+                "Handler": "index.handler",
+                "Runtime": "python3.7",
+                "Role": {
+                    "Fn::GetAtt": [
+                        "CopyZipsRole",
+                        "Arn"
+                    ]
+                },
+                "Timeout": 240,
+                "Code": {
+                    "ZipFile": "import json\nimport logging\nimport threading\nimport boto3\nimport cfnresponse\ndef copy_objects(source_bucket, dest_bucket, prefix, objects):\n    s3 = boto3.client('s3')\n    for o in objects:\n        key = prefix + o\n        copy_source = {\n            'Bucket': source_bucket,\n            'Key': key\n        }\n        print('copy_source: %s' % copy_source)\n        print('dest_bucket = %s'%dest_bucket)\n        print('key = %s' %key)\n        s3.copy_object(CopySource=copy_source, Bucket=dest_bucket,\n              Key=key)\ndef delete_objects(bucket, prefix, objects):\n    s3 = boto3.client('s3')\n    objects = {'Objects': [{'Key': prefix + o} for o in objects]}\n    s3.delete_objects(Bucket=bucket, Delete=objects)\ndef timeout(event, context):\n    logging.error('Execution is about to time out, sending failure response to CloudFormation')\n    cfnresponse.send(event, context, cfnresponse.FAILED, {}, None)\ndef handler(event, context):\n    # make sure we send a failure to CloudFormation if the function\n    # is going to timeout\n    timer = threading.Timer((context.get_remaining_time_in_millis()\n              / 1000.00) - 0.5, timeout, args=[event, context])\n    timer.start()\n    print('Received event: %s' % json.dumps(event))\n    status = cfnresponse.SUCCESS\n    try:\n        source_bucket = event['ResourceProperties']['SourceBucket']\n        dest_bucket = event['ResourceProperties']['DestBucket']\n        prefix = event['ResourceProperties']['Prefix']\n        objects = event['ResourceProperties']['Objects']\n        if event['RequestType'] == 'Delete':\n            delete_objects(dest_bucket, prefix, objects)\n        else:\n            copy_objects(source_bucket, dest_bucket, prefix, objects)\n    except Exception as e:\n        logging.error('Exception: %s' % e, exc_info=True)\n        status = cfnresponse.FAILED\n    finally:\n        timer.cancel()\n        cfnresponse.send(event, context, status, {}, None)\n"
+                }
+            }
+        },
         "OrganizationTokenSecret": {
             "Type": "AWS::SecretsManager::Secret",
             "Properties": {
@@ -112,9 +212,14 @@
         },
         "DruvaCloudRangerOnboardingFunction": {
             "Type": "AWS::Lambda::Function",
+            "DependsOn": [
+                "CopyZips"
+            ],
             "Properties": {
                 "Code": {
-                    "S3Bucket": "druva-cloudranger-ct-assets-demo",
+                    "S3Bucket": {
+						"Ref": "LambdaZipsBucket"
+					},
                     "S3Key": "onboarding.zip"
                 },
                 "Handler": "onboarding.handler",
@@ -449,9 +554,14 @@
         },
         "DruvaCloudRangerStackSetFunction": {
             "Type": "AWS::Lambda::Function",
+            "DependsOn": [
+                "CopyZips"
+            ],
             "Properties": {
                 "Code": {
-                    "S3Bucket": "druva-cloudranger-ct-assets-demo",
+                    "S3Bucket": {
+						"Ref": "LambdaZipsBucket"
+					},
                     "S3Key": "stackset.zip"
                 },
                 "Handler": "stackset.handler",
