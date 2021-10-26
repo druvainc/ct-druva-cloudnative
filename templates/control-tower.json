@@ -230,11 +230,11 @@
                         "stackSetName": {
                             "Ref": "StackSetName"
                         },
-                        "organizationToken": {
-                            "Ref": "OrganizationToken"
+                        "organizationKeyIdSecretArn": {
+                            "Ref": "OrganizationKeyIdSecret"
                         },
-                        "organizationKeyId": {
-                            "Ref": "OrganizationKeyId"
+                        "organizationTokenSecretArn": {
+                            "Ref": "OrganizationTokenSecret"
                         },
                         "seedAccounts": {
                             "Ref": "LaunchAccountList"
@@ -572,12 +572,6 @@
                     "Variables": {
                         "stackSetName": {
                             "Ref": "StackSetName"
-                        },
-                        "organizationKeyIdSecretArn": {
-                            "Ref": "OrganizationKeyIdSecret"
-                        },
-                        "organizationTokenSecretArn": {
-                            "Ref": "OrganizationTokenSecret"
                         },
                         "seedAccounts": {
                             "Ref": "LaunchAccountList"

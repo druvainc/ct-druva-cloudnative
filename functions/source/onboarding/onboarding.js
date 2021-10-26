@@ -5,8 +5,8 @@
  * @returns
  */
 exports.handler = async (event, context) => {
-	const responder = require('cfn-custom-resource')
 	console.log('Received event', JSON.stringify(event, null, 4))
+	const responder = require('cfn-custom-resource')
 
 	try {
 		if (['Create', 'Update'].includes(event.RequestType)) {
@@ -21,11 +21,10 @@ exports.handler = async (event, context) => {
 		}, event)
 
 	} catch (e) {
-		console.log('8')
 		console.log('Onboarding function has encountered an error', JSON.stringify(e, null, 4))
 
 		return responder.sendResponse({
-			Status: 'SUCCESS',
+			Status: 'FAILED',
 			Reason: 'See the details in CloudWatch Log Stream: ' + context.logStreamName,
 			PhysicalResourceId: event.PhysicalResourceId || context.logStreamName,
 		}, event)
@@ -44,11 +43,19 @@ async function createOrUpdateStackSet (context) {
 		stackRegion,
 		stackSetName,
 		seedAccounts = '',
-		organizationToken,
-		organizationKeyId,
+		organizationKeyIdSecretArn,
+		organizationTokenSecretArn,
 	} = process.env
 
 	const [, , , regionName, managementAccountId] = context.invokedFunctionArn.split(':')
+
+	// Retrieve secret ARN's from environment variables
+
+	// Retrieve parameters from AWS Secrets Manager
+	const [ organizationKeyId, organizationToken ] = await Promise.all([
+		getSecretValue(organizationKeyIdSecretArn),
+		getSecretValue(organizationTokenSecretArn),
+	])
 
 	const AWS = require('aws-sdk')
 	const CloudFormation = new AWS.CloudFormation()
@@ -130,6 +137,22 @@ async function createOrUpdateStackSet (context) {
 }
 
 /**
+ * This function will get a secret value from AWS Secrets Manager by providing the Secret ID
+ * @param {*} SecretId
+ * @returns {string} SecretString
+ */
+async function getSecretValue (SecretId) {
+	try {
+		const AWS = require('aws-sdk')
+		const SecretsManager = new AWS.SecretsManager()
+		const { SecretString } = await SecretsManager.getSecretValue({ SecretId }).promise()
+		return SecretString
+	} catch (e) {
+		console.log(`An error occurred when trying to fetch the secret ${SecretId}`, JSON.stringify(e, null, 4))
+	}
+}
+
+/**
  * This function will perform the following actions:
  * 1. Delete any stack set instances that are part of a target account
  * 2. Delete stack set instance in management account
@@ -140,19 +163,15 @@ async function deleteStackSet (context) {
 	const { stackSetName } = process.env
 	const CloudFormation = new AWS.CloudFormation()
 
-	console.log('1')
 	// Verify the management account stack set exists
 	try {
-		console.log('2')
 		await CloudFormation.describeStackSet({ StackSetName: stackSetName }).promise()
 	} catch (e) {
-		console.log('3')
 		console.log(`Stack set ${stackSetName} does not exist`)
 		return true
 	}
 
 	// Describe all stack set instances
-	console.log('4')
 	const stackSetInstances = await getAllStackSetInstances(stackSetName)
 
 	const regionList = []
@@ -168,7 +187,6 @@ async function deleteStackSet (context) {
 		}
 	})
 
-	console.log('5')
 	// If there are any accounts where a stack set instance is deployed, delete their stack instances
 	if (accountList.length) {
 		const waitTime = 30 // seconds
@@ -201,8 +219,8 @@ async function deleteStackSet (context) {
 		console.log('Initiated delete for management stack set: ', JSON.stringify(deleteStackSetResult, null, 4))
 	} catch (e) {
 		console.log('A problem occurred while trying to delete the stack set', JSON.stringify(e, null, 4))
+		throw e
 	}
-	console.log('6')
 	return
 }
 
