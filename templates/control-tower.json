@@ -1,651 +1,666 @@
 {
-    "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "AWS Control Tower integration for Druva CloudRanger",
-    "Metadata": {
-        "QuickStartDocumentation": {
-            "EntrypointName": "Parameters for deploying the AWS Control Tower integration for Druva CloudRanger"
-        },
-        "ParameterGroups": [
-            {
-                "Label": {
-                    "default": "Druva CloudRanger configuration"
-                },
-                "Parameters": [
-                    "OrganizationToken",
-                    "OrganizationKeyId"
-                ]
-            },
-            {
-                "Label": {
-                    "default": "Deployment configuration"
-                },
-                "Parameters": [
-                    "LaunchAccountList",
-                    "StackRegion",
-                    "StackSetName"
-                ]
-            },
-            {
-                "Label": {
-                    "default": "AWS Lambda code hosting configuration"
-                },
-                "Parameters": [
-                    "BucketName"
-                ]
-            }
-        ],
-        "ParameterLabels": {
-            "OrganizationToken": {
-                "default": "Your organization token."
-            },
-            "OrganizationKeyId": {
-                "default": "Your organization key ID."
-            },
-            "StackRegion": {
-                "default": "The desired region for stack instances to be launched in."
-            },
-            "LaunchAccountList": {
-                "default": "Existing AWS account ID list."
-            },
-            "StackSetName": {
-                "default": "StackSet name."
-            },
-            "BucketName": {
-                "default": "AWS Lambda code hosting S3 bucket name."
-            }
-        }
-    },
-    "Parameters": {
-        "OrganizationToken": {
-            "Type": "String",
-            "NoEcho": true,
-            "Description": "Organization token. Please retrieve this from the CloudRanger application for your organization"
-        },
-        "OrganizationKeyId": {
-            "Type": "String",
-            "NoEcho": true,
-            "Description": "Organization key ID. Please retrieve this from the CloudRanger application for your organization",
-            "AllowedPattern": "[0-9]+",
-            "ConstraintDescription": "Organization key ID contains only numbers"
-        },
-        "LaunchAccountList": {
-            "Type": "String",
-            "Description": "Comma separated string of existing (enrolled with Control Tower) AWS account IDs that you wish to protect with CloudRanger. See https://docs.aws.amazon.com/general/latest/gr/acct-identifiers.html",
-            "AllowedPattern": "^$|^(([0-9]){12},)*(([0-9]){12})$",
-            "ConstraintDescription": "LaunchAccountList must be either empty or a comma separated string of AWS account IDs (12 digit number) with no spaces"
-        },
-        "StackSetName": {
-            "Type": "String",
-            "Description": "Druva CloudRanger integration StackSet name",
-            "Default": "Druva-CloudRanger-Integration"
-        },
-        "StackRegion": {
-            "Type": "String",
-            "Description": "The desired region to deployed stacks for enrolled accounts into",
-            "Default": "us-east-1"
-        },
-        "BucketName": {
-            "Type": "String",
-            "Default": "druva-cloudranger-ct-assets-demo",
-            "Description": "S3 bucket for the control tower deployment assets. Use this if you want to customize your deployment. The bucket name can include numbers, lowercase letters, uppercase letters, and hyphens, but it cannot start or end with hyphens (-)."
-        }
-    },
-    "Resources": {
+	"AWSTemplateFormatVersion": "2010-09-09",
+	"Description": "AWS Control Tower integration for Druva CloudRanger",
+	"Metadata": {
+		"QuickStartDocumentation": {
+			"EntrypointName": "Parameters for deploying the AWS Control Tower integration for Druva CloudRanger"
+		},
+		"ParameterGroups": [
+			{
+				"Label": {
+					"default": "Druva CloudRanger configuration"
+				},
+				"Parameters": [
+					"OrganizationToken",
+					"OrganizationKeyId"
+				]
+			},
+			{
+				"Label": {
+					"default": "Deployment configuration"
+				},
+				"Parameters": [
+					"LaunchAccountList",
+					"StackRegion",
+					"StackSetName"
+				]
+			},
+			{
+				"Label": {
+					"default": "AWS Lambda code hosting configuration"
+				},
+				"Parameters": [
+					"BucketName"
+				]
+			}
+		],
+		"ParameterLabels": {
+			"OrganizationToken": {
+				"default": "Your organization token."
+			},
+			"OrganizationKeyId": {
+				"default": "Your organization key ID."
+			},
+			"StackRegion": {
+				"default": "The desired region for stack instances to be launched in."
+			},
+			"LaunchAccountList": {
+				"default": "Existing AWS account ID list."
+			},
+			"StackSetName": {
+				"default": "StackSet name."
+			},
+			"BucketName": {
+				"default": "AWS Lambda code hosting S3 bucket name."
+			}
+		}
+	},
+	"Parameters": {
+		"OrganizationToken": {
+			"Type": "String",
+			"NoEcho": true,
+			"Description": "Organization token. Please retrieve this from the CloudRanger application for your organization"
+		},
+		"OrganizationKeyId": {
+			"Type": "String",
+			"NoEcho": true,
+			"Description": "Organization key ID. Please retrieve this from the CloudRanger application for your organization",
+			"AllowedPattern": "[0-9]+",
+			"ConstraintDescription": "Organization key ID contains only numbers"
+		},
+		"LaunchAccountList": {
+			"Type": "String",
+			"Description": "Comma separated string of existing (enrolled with Control Tower) AWS account IDs that you wish to protect with CloudRanger. See https://docs.aws.amazon.com/general/latest/gr/acct-identifiers.html",
+			"AllowedPattern": "^$|^(([0-9]){12},)*(([0-9]){12})$",
+			"ConstraintDescription": "LaunchAccountList must be either empty or a comma separated string of AWS account IDs (12 digit number) with no spaces"
+		},
+		"StackSetName": {
+			"Type": "String",
+			"Description": "Druva CloudRanger integration StackSet name",
+			"Default": "Druva-CloudRanger-Integration"
+		},
+		"StackRegion": {
+			"Type": "String",
+			"Description": "The desired region to deployed stacks for enrolled accounts into",
+			"Default": "us-east-1"
+		},
+		"BucketName": {
+			"Type": "String",
+			"Default": "druva-cloudranger-ct-assets-demo",
+			"Description": "S3 bucket for the control tower deployment assets. Use this if you want to customize your deployment. The bucket name can include numbers, lowercase letters, uppercase letters, and hyphens, but it cannot start or end with hyphens (-)."
+		}
+	},
+	"Resources": {
 		"LambdaZipsBucket": {
-            "Type": "AWS::S3::Bucket"
-        },
-        "CopyZips": {
-            "Type": "Custom::CopyZips",
-            "Properties": {
-                "ServiceToken": {
-                    "Fn::GetAtt": [
-                        "CopyZipsFunction",
-                        "Arn"
-                    ]
-                },
-                "DestBucket": {
-                    "Ref": "LambdaZipsBucket"
-                },
-                "SourceBucket": {
-                    "Ref": "BucketName"
-                },
-                "Prefix": "",
-                "Objects": [
-                    "onboarding.zip",
-                    "stackset.zip"
-                ]
-            }
-        },
-        "CopyZipsRole": {
-            "Type": "AWS::IAM::Role",
-            "Properties": {
-                "AssumeRolePolicyDocument": {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                        {
-                            "Effect": "Allow",
-                            "Principal": {
-                                "Service": "lambda.amazonaws.com"
-                            },
-                            "Action": "sts:AssumeRole"
-                        }
-                    ]
-                },
-                "ManagedPolicyArns": [
-                    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-                ],
-                "Path": "/",
-                "Policies": [
-                    {
-                        "PolicyName": "lambda-copier",
-                        "PolicyDocument": {
-                            "Version": "2012-10-17",
-                            "Statement": [
-                                {
-                                    "Effect": "Allow",
-                                    "Action": [
-                                        "s3:GetObject",
-                                        "s3:GetObjectTagging"
-                                    ],
-                                    "Resource": [
-                                        {
-                                            "Fn::Sub": "arn:aws:s3:::${BucketName}/*"
-                                        }
-                                    ]
-                                },
-                                {
-                                    "Effect": "Allow",
-                                    "Action": [
-                                        "s3:PutObject",
-                                        "s3:DeleteObject",
-                                        "s3:PutObjectTagging"
-                                    ],
-                                    "Resource": [
-                                        {
-                                            "Fn::Sub": "arn:aws:s3:::${LambdaZipsBucket}/*"
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    }
-                ]
-            }
-        },
-        "CopyZipsFunction": {
-            "Type": "AWS::Lambda::Function",
-            "Properties": {
-                "Description": "Copies objects from the S3 bucket to a new location.",
-                "Handler": "index.handler",
-                "Runtime": "python3.7",
-                "Role": {
-                    "Fn::GetAtt": [
-                        "CopyZipsRole",
-                        "Arn"
-                    ]
-                },
-                "Timeout": 240,
-                "Code": {
-                    "ZipFile": "import json\nimport logging\nimport threading\nimport boto3\nimport cfnresponse\ndef copy_objects(source_bucket, dest_bucket, prefix, objects):\n    s3 = boto3.client('s3')\n    for o in objects:\n        key = prefix + o\n        copy_source = {\n            'Bucket': source_bucket,\n            'Key': key\n        }\n        print('copy_source: %s' % copy_source)\n        print('dest_bucket = %s'%dest_bucket)\n        print('key = %s' %key)\n        s3.copy_object(CopySource=copy_source, Bucket=dest_bucket,\n              Key=key)\ndef delete_objects(bucket, prefix, objects):\n    s3 = boto3.client('s3')\n    objects = {'Objects': [{'Key': prefix + o} for o in objects]}\n    s3.delete_objects(Bucket=bucket, Delete=objects)\ndef timeout(event, context):\n    logging.error('Execution is about to time out, sending failure response to CloudFormation')\n    cfnresponse.send(event, context, cfnresponse.FAILED, {}, None)\ndef handler(event, context):\n    # make sure we send a failure to CloudFormation if the function\n    # is going to timeout\n    timer = threading.Timer((context.get_remaining_time_in_millis()\n              / 1000.00) - 0.5, timeout, args=[event, context])\n    timer.start()\n    print('Received event: %s' % json.dumps(event))\n    status = cfnresponse.SUCCESS\n    try:\n        source_bucket = event['ResourceProperties']['SourceBucket']\n        dest_bucket = event['ResourceProperties']['DestBucket']\n        prefix = event['ResourceProperties']['Prefix']\n        objects = event['ResourceProperties']['Objects']\n        if event['RequestType'] == 'Delete':\n            delete_objects(dest_bucket, prefix, objects)\n        else:\n            copy_objects(source_bucket, dest_bucket, prefix, objects)\n    except Exception as e:\n        logging.error('Exception: %s' % e, exc_info=True)\n        status = cfnresponse.FAILED\n    finally:\n        timer.cancel()\n        cfnresponse.send(event, context, status, {}, None)\n"
-                }
-            }
-        },
-        "OrganizationTokenSecret": {
-            "Type": "AWS::SecretsManager::Secret",
-            "Properties": {
-                "Description": "The Druva CloudRanger organization token",
-                "Name": "DruvaCloudRangerOrganizationToken",
-                "SecretString": {
-                    "Ref": "OrganizationToken"
-                }
-            }
-        },
-        "OrganizationKeyIdSecret": {
-            "Type": "AWS::SecretsManager::Secret",
-            "Properties": {
-                "Description": "The Druva CloudRanger organization key ID",
-                "Name": "DruvaCloudRangerOrganizationKeyId",
-                "SecretString": {
-                    "Ref": "OrganizationKeyId"
-                }
-            }
-        },
-        "DruvaCloudRangerOnboardingFunction": {
-            "Type": "AWS::Lambda::Function",
-            "DependsOn": [
-                "CopyZips"
-            ],
-            "Properties": {
-                "Code": {
-                    "S3Bucket": {
+			"Type": "AWS::S3::Bucket"
+		},
+		"CopyZips": {
+			"Type": "Custom::CopyZips",
+			"Properties": {
+				"ServiceToken": {
+					"Fn::GetAtt": [
+						"CopyZipsFunction",
+						"Arn"
+					]
+				},
+				"DestBucket": {
+					"Ref": "LambdaZipsBucket"
+				},
+				"SourceBucket": {
+					"Ref": "BucketName"
+				},
+				"Prefix": "",
+				"Objects": [
+					"onboarding.zip",
+					"stackset.zip"
+				]
+			}
+		},
+		"CopyZipsRole": {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+				"AssumeRolePolicyDocument": {
+					"Version": "2012-10-17",
+					"Statement": [
+						{
+							"Effect": "Allow",
+							"Principal": {
+								"Service": "lambda.amazonaws.com"
+							},
+							"Action": "sts:AssumeRole"
+						}
+					]
+				},
+				"ManagedPolicyArns": [
+					"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+				],
+				"Path": "/",
+				"Policies": [
+					{
+						"PolicyName": "lambda-copier",
+						"PolicyDocument": {
+							"Version": "2012-10-17",
+							"Statement": [
+								{
+									"Effect": "Allow",
+									"Action": [
+										"s3:GetObject",
+										"s3:GetObjectTagging"
+									],
+									"Resource": [
+										{
+											"Fn::Sub": "arn:aws:s3:::${BucketName}/*"
+										}
+									]
+								},
+								{
+									"Effect": "Allow",
+									"Action": [
+										"s3:PutObject",
+										"s3:DeleteObject",
+										"s3:PutObjectTagging"
+									],
+									"Resource": [
+										{
+											"Fn::Sub": "arn:aws:s3:::${LambdaZipsBucket}/*"
+										}
+									]
+								}
+							]
+						}
+					}
+				]
+			}
+		},
+		"CopyZipsFunction": {
+			"Type": "AWS::Lambda::Function",
+			"Properties": {
+				"Description": "Copies objects from the S3 bucket to a new location.",
+				"Handler": "index.handler",
+				"Runtime": "python3.7",
+				"Role": {
+					"Fn::GetAtt": [
+						"CopyZipsRole",
+						"Arn"
+					]
+				},
+				"Timeout": 240,
+				"Code": {
+					"ZipFile": "import json\nimport logging\nimport threading\nimport boto3\nimport cfnresponse\ndef copy_objects(source_bucket, dest_bucket, prefix, objects):\n    s3 = boto3.client('s3')\n    for o in objects:\n        key = prefix + o\n        copy_source = {\n            'Bucket': source_bucket,\n            'Key': key\n        }\n        print('copy_source: %s' % copy_source)\n        print('dest_bucket = %s'%dest_bucket)\n        print('key = %s' %key)\n        s3.copy_object(CopySource=copy_source, Bucket=dest_bucket,\n              Key=key)\ndef delete_objects(bucket, prefix, objects):\n    s3 = boto3.client('s3')\n    objects = {'Objects': [{'Key': prefix + o} for o in objects]}\n    s3.delete_objects(Bucket=bucket, Delete=objects)\ndef timeout(event, context):\n    logging.error('Execution is about to time out, sending failure response to CloudFormation')\n    cfnresponse.send(event, context, cfnresponse.FAILED, {}, None)\ndef handler(event, context):\n    # make sure we send a failure to CloudFormation if the function\n    # is going to timeout\n    timer = threading.Timer((context.get_remaining_time_in_millis()\n              / 1000.00) - 0.5, timeout, args=[event, context])\n    timer.start()\n    print('Received event: %s' % json.dumps(event))\n    status = cfnresponse.SUCCESS\n    try:\n        source_bucket = event['ResourceProperties']['SourceBucket']\n        dest_bucket = event['ResourceProperties']['DestBucket']\n        prefix = event['ResourceProperties']['Prefix']\n        objects = event['ResourceProperties']['Objects']\n        if event['RequestType'] == 'Delete':\n            delete_objects(dest_bucket, prefix, objects)\n        else:\n            copy_objects(source_bucket, dest_bucket, prefix, objects)\n    except Exception as e:\n        logging.error('Exception: %s' % e, exc_info=True)\n        status = cfnresponse.FAILED\n    finally:\n        timer.cancel()\n        cfnresponse.send(event, context, status, {}, None)\n"
+				}
+			}
+		},
+		"OrganizationTokenSecret": {
+			"Type": "AWS::SecretsManager::Secret",
+			"Properties": {
+				"Description": "The Druva CloudRanger organization token",
+				"Name": "DruvaCloudRangerOrganizationToken",
+				"SecretString": {
+					"Ref": "OrganizationToken"
+				}
+			}
+		},
+		"OrganizationKeyIdSecret": {
+			"Type": "AWS::SecretsManager::Secret",
+			"Properties": {
+				"Description": "The Druva CloudRanger organization key ID",
+				"Name": "DruvaCloudRangerOrganizationKeyId",
+				"SecretString": {
+					"Ref": "OrganizationKeyId"
+				}
+			}
+		},
+		"DruvaCloudRangerOnboardingFunction": {
+			"Type": "AWS::Lambda::Function",
+			"DependsOn": [
+				"CopyZips"
+			],
+			"Properties": {
+				"Code": {
+					"S3Bucket": {
 						"Ref": "LambdaZipsBucket"
 					},
-                    "S3Key": "onboarding.zip"
-                },
-                "Handler": "onboarding.handler",
-                "Runtime": "nodejs14.x",
-                "Timeout": 900,
-                "Environment": {
-                    "Variables": {
-                        "stackSetName": {
-                            "Ref": "StackSetName"
-                        },
-                        "organizationKeyIdSecretArn": {
-                            "Ref": "OrganizationKeyIdSecret"
-                        },
-                        "organizationTokenSecretArn": {
-                            "Ref": "OrganizationTokenSecret"
-                        },
-                        "seedAccounts": {
-                            "Ref": "LaunchAccountList"
-                        },
-                        "stackSNS": {
-                            "Ref": "DruvaCloudRangerStackSNS"
-                        },
-                        "stackRegion": {
-                            "Ref": "StackRegion"
-                        }
-                    }
-                },
-                "Role": {
-                    "Fn::GetAtt": [
-                        "DruvaCloudRangerOnboardingFunctionRole",
-                        "Arn"
-                    ]
-                }
-            }
-        },
-        "DruvaCloudRangerOnboardingFunctionRole": {
-            "Type": "AWS::IAM::Role",
-            "Properties": {
-                "AssumeRolePolicyDocument": {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                        {
-                            "Effect": "Allow",
-                            "Principal": {
-                                "Service": "lambda.amazonaws.com"
-                            },
-                            "Action": "sts:AssumeRole"
-                        }
-                    ]
-                },
-                "Path": "/",
-                "Policies": [
-                    {
-                        "PolicyName": "Onboarding_Operations",
-                        "PolicyDocument": {
-                            "Version": "2012-10-17",
-                            "Statement": [
-                                {
-                                    "Sid": "StackSetInstanceCreate",
-                                    "Effect": "Allow",
-                                    "Action": [
-                                        "cloudformation:CreateStackInstances",
-                                        "cloudformation:ListStackInstances"
-                                    ],
-                                    "Resource": {
-                                        "Fn::Join": [
-                                            "",
-                                            [
-                                                "arn:aws:cloudformation:",
-                                                {
-                                                    "Ref": "AWS::Region"
-                                                },
-                                                ":",
-                                                {
-                                                    "Ref": "AWS::AccountId"
-                                                },
-                                                ":stackset/",
-                                                {
-                                                    "Ref": "StackSetName"
-                                                },
-                                                "*"
-                                            ]
-                                        ]
-                                    }
-                                },
-                                {
-                                    "Sid": "StackSetInstanceDelete",
-                                    "Effect": "Allow",
-                                    "Action": [
-                                        "cloudformation:DeleteStackSet",
-                                        "cloudformation:DeleteStackInstances",
-                                        "cloudformation:DescribeStackSetOperation"
-                                    ],
-                                    "Resource": {
-                                        "Fn::Join": [
-                                            "",
-                                            [
-                                                "arn:aws:cloudformation:",
-                                                {
-                                                    "Ref": "AWS::Region"
-                                                },
-                                                ":",
-                                                {
-                                                    "Ref": "AWS::AccountId"
-                                                },
-                                                ":stackset/",
-                                                {
-                                                    "Ref": "StackSetName"
-                                                },
-                                                "*"
-                                            ]
-                                        ]
-                                    }
-                                },
-                                {
-                                    "Sid": "StackSetCreate",
-                                    "Effect": "Allow",
-                                    "Action": [
-                                        "cloudformation:CreateStackSet",
-                                        "cloudformation:DescribeStackSet"
-                                    ],
-                                    "Resource": {
-                                        "Fn::Join": [
-                                            "",
-                                            [
-                                                "arn:aws:cloudformation:",
-                                                "*",
-                                                ":",
-                                                "*",
-                                                ":stackset/",
-                                                {
-                                                    "Ref": "StackSetName"
-                                                },
-                                                "*"
-                                            ]
-                                        ]
-                                    }
-                                },
-                                {
-                                    "Sid": "SNSOps",
-                                    "Effect": "Allow",
-                                    "Action": [
-                                        "sns:Publish"
-                                    ],
-                                    "Resource": {
-                                        "Ref": "DruvaCloudRangerStackSNS"
-                                    }
-                                },
-                                {
-                                    "Sid": "PassRole",
-                                    "Effect": "Allow",
-                                    "Action": [
-                                        "iam:PassRole"
-                                    ],
-                                    "Resource": {
-                                        "Fn::Join": [
-                                            ":",
-                                            [
-                                                "arn:aws:iam:",
-                                                {
-                                                    "Ref": "AWS::AccountId"
-                                                },
-                                                "role/service-role/AWSControlTowerStackSetRole"
-                                            ]
-                                        ]
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                ],
-                "ManagedPolicyArns": [
-                    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-                ]
-            }
-        },
-        "DruvaCloudRangerFirstLaunch": {
-            "Type": "AWS::CloudFormation::CustomResource",
-            "DependsOn": [
-                "DruvaCloudRangerStackSNSSubscription"
-            ],
-            "Properties": {
-                "ServiceToken": {
-                    "Fn::GetAtt": [
-                        "DruvaCloudRangerOnboardingFunction",
-                        "Arn"
-                    ]
-                }
-            }
-        },
-        "DruvaCloudRangerStackSNS": {
-            "Type": "AWS::SNS::Topic"
-        },
-        "DruvaCloudRangerStackSNSLambdaPermission": {
-            "Type": "AWS::Lambda::Permission",
-            "Properties": {
-                "Action": "lambda:InvokeFunction",
-                "FunctionName": {
-                    "Fn::GetAtt": [
-                        "DruvaCloudRangerStackSetFunction",
-                        "Arn"
-                    ]
-                },
-                "Principal": "sns.amazonaws.com",
-                "SourceArn": {
-                    "Ref": "DruvaCloudRangerStackSNS"
-                }
-            }
-        },
-        "DruvaCloudRangerStackSNSSubscription": {
-            "Type": "AWS::SNS::Subscription",
-            "Properties": {
-                "Endpoint": {
-                    "Fn::GetAtt": [
-                        "DruvaCloudRangerStackSetFunction",
-                        "Arn"
-                    ]
-                },
-                "Protocol": "lambda",
-                "TopicArn": {
-                    "Ref": "DruvaCloudRangerStackSNS"
-                }
-            }
-        },
-        "DruvaCloudRangerStackSetFunctionRole": {
-            "Type": "AWS::IAM::Role",
-            "Properties": {
-                "AssumeRolePolicyDocument": {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                        {
-                            "Effect": "Allow",
-                            "Principal": {
-                                "Service": "lambda.amazonaws.com"
-                            },
-                            "Action": "sts:AssumeRole"
-                        }
-                    ]
-                },
-                "Path": "/",
-                "Policies": [
-                    {
-                        "PolicyName": "Register_Operations",
-                        "PolicyDocument": {
-                            "Version": "2012-10-17",
-                            "Statement": [
-                                {
-                                    "Sid": "SecretRead",
-                                    "Effect": "Allow",
-                                    "Action": [
-                                        "secretsmanager:GetSecretValue"
-                                    ],
-                                    "Resource": [
-                                        {
-                                            "Ref": "OrganizationKeyIdSecret"
-                                        },
-                                        {
-                                            "Ref": "OrganizationTokenSecret"
-                                        }
-                                    ]
-                                },
-                                {
-                                    "Sid": "StackSetInstanceOperations",
-                                    "Effect": "Allow",
-                                    "Action": [
-                                        "cloudformation:CreateStackInstances",
-                                        "cloudformation:ListStackInstances",
-                                        "cloudformation:ListStackSetOperations",
-                                        "cloudformation:DescribeStackSetOperation",
-                                        "cloudformation:DeleteStackInstances"
-                                    ],
-                                    "Resource": {
-                                        "Fn::Join": [
-                                            "",
-                                            [
-                                                "arn:aws:cloudformation:",
-                                                {
-                                                    "Ref": "AWS::Region"
-                                                },
-                                                ":",
-                                                {
-                                                    "Ref": "AWS::AccountId"
-                                                },
-                                                ":stackset/",
-                                                {
-                                                    "Ref": "StackSetName"
-                                                },
-                                                "*"
-                                            ]
-                                        ]
-                                    }
-                                },
-                                {
-                                    "Sid": "StackSetOperations",
-                                    "Effect": "Allow",
-                                    "Action": [
-                                        "cloudformation:DescribeStackSet"
-                                    ],
-                                    "Resource": {
-                                        "Fn::Join": [
-                                            "",
-                                            [
-                                                "arn:aws:cloudformation:",
-                                                "*",
-                                                ":",
-                                                "*",
-                                                ":stackset/Druva-CloudRanger-Integration*"
-                                            ]
-                                        ]
-                                    }
-                                },
-                                {
-                                    "Sid": "SNSOps",
-                                    "Effect": "Allow",
-                                    "Action": [
-                                        "sns:Publish"
-                                    ],
-                                    "Resource": [
-                                        {
-                                            "Ref": "DruvaCloudRangerStackSNS"
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    }
-                ],
-                "ManagedPolicyArns": [
-                    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-                ]
-            }
-        },
-        "DruvaCloudRangerStackSetFunction": {
-            "Type": "AWS::Lambda::Function",
-            "DependsOn": [
-                "CopyZips"
-            ],
-            "Properties": {
-                "Code": {
-                    "S3Bucket": {
+					"S3Key": "onboarding.zip"
+				},
+				"Handler": "onboarding.handler",
+				"Runtime": "nodejs14.x",
+				"Timeout": 900,
+				"Environment": {
+					"Variables": {
+						"stackSetName": {
+							"Ref": "StackSetName"
+						},
+						"organizationKeyIdSecretArn": {
+							"Ref": "OrganizationKeyIdSecret"
+						},
+						"organizationTokenSecretArn": {
+							"Ref": "OrganizationTokenSecret"
+						},
+						"seedAccounts": {
+							"Ref": "LaunchAccountList"
+						},
+						"stackSNS": {
+							"Ref": "DruvaCloudRangerStackSNS"
+						},
+						"stackRegion": {
+							"Ref": "StackRegion"
+						}
+					}
+				},
+				"Role": {
+					"Fn::GetAtt": [
+						"DruvaCloudRangerOnboardingFunctionRole",
+						"Arn"
+					]
+				}
+			}
+		},
+		"DruvaCloudRangerOnboardingFunctionRole": {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+				"AssumeRolePolicyDocument": {
+					"Version": "2012-10-17",
+					"Statement": [
+						{
+							"Effect": "Allow",
+							"Principal": {
+								"Service": "lambda.amazonaws.com"
+							},
+							"Action": "sts:AssumeRole"
+						}
+					]
+				},
+				"Path": "/",
+				"Policies": [
+					{
+						"PolicyName": "Onboarding_Operations",
+						"PolicyDocument": {
+							"Version": "2012-10-17",
+							"Statement": [
+								{
+									"Sid": "SecretRead",
+									"Effect": "Allow",
+									"Action": [
+										"secretsmanager:GetSecretValue"
+									],
+									"Resource": [
+										{
+											"Ref": "OrganizationTokenSecret"
+										},
+										{
+											"Ref": "OrganizationKeyIdSecret"
+										}
+									]
+								},
+								{
+									"Sid": "StackSetInstanceCreate",
+									"Effect": "Allow",
+									"Action": [
+										"cloudformation:CreateStackInstances",
+										"cloudformation:ListStackInstances"
+									],
+									"Resource": {
+										"Fn::Join": [
+											"",
+											[
+												"arn:aws:cloudformation:",
+												{
+													"Ref": "AWS::Region"
+												},
+												":",
+												{
+													"Ref": "AWS::AccountId"
+												},
+												":stackset/",
+												{
+													"Ref": "StackSetName"
+												},
+												"*"
+											]
+										]
+									}
+								},
+								{
+									"Sid": "StackSetInstanceDelete",
+									"Effect": "Allow",
+									"Action": [
+										"cloudformation:DeleteStackSet",
+										"cloudformation:DeleteStackInstances",
+										"cloudformation:DescribeStackSetOperation"
+									],
+									"Resource": {
+										"Fn::Join": [
+											"",
+											[
+												"arn:aws:cloudformation:",
+												{
+													"Ref": "AWS::Region"
+												},
+												":",
+												{
+													"Ref": "AWS::AccountId"
+												},
+												":stackset/",
+												{
+													"Ref": "StackSetName"
+												},
+												"*"
+											]
+										]
+									}
+								},
+								{
+									"Sid": "StackSetCreate",
+									"Effect": "Allow",
+									"Action": [
+										"cloudformation:CreateStackSet",
+										"cloudformation:DescribeStackSet"
+									],
+									"Resource": {
+										"Fn::Join": [
+											"",
+											[
+												"arn:aws:cloudformation:",
+												"*",
+												":",
+												"*",
+												":stackset/",
+												{
+													"Ref": "StackSetName"
+												},
+												"*"
+											]
+										]
+									}
+								},
+								{
+									"Sid": "SNSOps",
+									"Effect": "Allow",
+									"Action": [
+										"sns:Publish"
+									],
+									"Resource": {
+										"Ref": "DruvaCloudRangerStackSNS"
+									}
+								},
+								{
+									"Sid": "PassRole",
+									"Effect": "Allow",
+									"Action": [
+										"iam:PassRole"
+									],
+									"Resource": {
+										"Fn::Join": [
+											":",
+											[
+												"arn:aws:iam:",
+												{
+													"Ref": "AWS::AccountId"
+												},
+												"role/service-role/AWSControlTowerStackSetRole"
+											]
+										]
+									}
+								}
+							]
+						}
+					}
+				],
+				"ManagedPolicyArns": [
+					"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+				]
+			}
+		},
+		"DruvaCloudRangerFirstLaunch": {
+			"Type": "AWS::CloudFormation::CustomResource",
+			"DependsOn": [
+				"DruvaCloudRangerStackSNSSubscription"
+			],
+			"Properties": {
+				"ServiceToken": {
+					"Fn::GetAtt": [
+						"DruvaCloudRangerOnboardingFunction",
+						"Arn"
+					]
+				}
+			}
+		},
+		"DruvaCloudRangerStackSNS": {
+			"Type": "AWS::SNS::Topic"
+		},
+		"DruvaCloudRangerStackSNSLambdaPermission": {
+			"Type": "AWS::Lambda::Permission",
+			"Properties": {
+				"Action": "lambda:InvokeFunction",
+				"FunctionName": {
+					"Fn::GetAtt": [
+						"DruvaCloudRangerStackSetFunction",
+						"Arn"
+					]
+				},
+				"Principal": "sns.amazonaws.com",
+				"SourceArn": {
+					"Ref": "DruvaCloudRangerStackSNS"
+				}
+			}
+		},
+		"DruvaCloudRangerStackSNSSubscription": {
+			"Type": "AWS::SNS::Subscription",
+			"Properties": {
+				"Endpoint": {
+					"Fn::GetAtt": [
+						"DruvaCloudRangerStackSetFunction",
+						"Arn"
+					]
+				},
+				"Protocol": "lambda",
+				"TopicArn": {
+					"Ref": "DruvaCloudRangerStackSNS"
+				}
+			}
+		},
+		"DruvaCloudRangerStackSetFunctionRole": {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+				"AssumeRolePolicyDocument": {
+					"Version": "2012-10-17",
+					"Statement": [
+						{
+							"Effect": "Allow",
+							"Principal": {
+								"Service": "lambda.amazonaws.com"
+							},
+							"Action": "sts:AssumeRole"
+						}
+					]
+				},
+				"Path": "/",
+				"Policies": [
+					{
+						"PolicyName": "Register_Operations",
+						"PolicyDocument": {
+							"Version": "2012-10-17",
+							"Statement": [
+								{
+									"Sid": "SecretRead",
+									"Effect": "Allow",
+									"Action": [
+										"secretsmanager:GetSecretValue"
+									],
+									"Resource": [
+										{
+											"Ref": "OrganizationKeyIdSecret"
+										},
+										{
+											"Ref": "OrganizationTokenSecret"
+										}
+									]
+								},
+								{
+									"Sid": "StackSetInstanceOperations",
+									"Effect": "Allow",
+									"Action": [
+										"cloudformation:CreateStackInstances",
+										"cloudformation:ListStackInstances",
+										"cloudformation:ListStackSetOperations",
+										"cloudformation:DescribeStackSetOperation",
+										"cloudformation:DeleteStackInstances"
+									],
+									"Resource": {
+										"Fn::Join": [
+											"",
+											[
+												"arn:aws:cloudformation:",
+												{
+													"Ref": "AWS::Region"
+												},
+												":",
+												{
+													"Ref": "AWS::AccountId"
+												},
+												":stackset/",
+												{
+													"Ref": "StackSetName"
+												},
+												"*"
+											]
+										]
+									}
+								},
+								{
+									"Sid": "StackSetOperations",
+									"Effect": "Allow",
+									"Action": [
+										"cloudformation:DescribeStackSet"
+									],
+									"Resource": {
+										"Fn::Join": [
+											"",
+											[
+												"arn:aws:cloudformation:",
+												"*",
+												":",
+												"*",
+												":stackset/Druva-CloudRanger-Integration*"
+											]
+										]
+									}
+								},
+								{
+									"Sid": "SNSOps",
+									"Effect": "Allow",
+									"Action": [
+										"sns:Publish"
+									],
+									"Resource": [
+										{
+											"Ref": "DruvaCloudRangerStackSNS"
+										}
+									]
+								}
+							]
+						}
+					}
+				],
+				"ManagedPolicyArns": [
+					"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+				]
+			}
+		},
+		"DruvaCloudRangerStackSetFunction": {
+			"Type": "AWS::Lambda::Function",
+			"DependsOn": [
+				"CopyZips"
+			],
+			"Properties": {
+				"Code": {
+					"S3Bucket": {
 						"Ref": "LambdaZipsBucket"
 					},
-                    "S3Key": "stackset.zip"
-                },
-                "Handler": "stackset.handler",
-                "Runtime": "nodejs14.x",
-                "Timeout": 120,
-                "ReservedConcurrentExecutions": 1,
-                "Environment": {
-                    "Variables": {
-                        "stackSetName": {
-                            "Ref": "StackSetName"
-                        },
-                        "seedAccounts": {
-                            "Ref": "LaunchAccountList"
-                        },
-                        "stackSNS": {
-                            "Ref": "DruvaCloudRangerStackSNS"
-                        },
-                        "stackRegion": {
-                            "Ref": "StackRegion"
-                        }
-                    }
-                },
-                "Role": {
-                    "Fn::GetAtt": [
-                        "DruvaCloudRangerStackSetFunctionRole",
-                        "Arn"
-                    ]
-                }
-            }
-        },
-        "DruvaCloudRangerControlTowerEvents": {
-            "Type": "AWS::Events::Rule",
-            "Properties": {
-                "Description": "Captures AWS Control Tower LifeCycle events and invokes additional functions.",
-                "EventPattern": {
-                    "detail": {
-                        "eventName": [
-                            "CreateManagedAccount",
-                            "UpdateManagedAccount"
-                        ],
-                        "eventSource": [
-                            "controltower.amazonaws.com"
-                        ]
-                    },
-                    "detail-type": [
-                        "AWS Service Event via CloudTrail"
-                    ],
-                    "source": [
-                        "aws.controltower"
-                    ]
-                },
-                "Name": "DruvaCloudRangerControlTowerEvents",
-                "State": "ENABLED",
-                "Targets": [
-                    {
-                        "Arn": {
-                            "Fn::GetAtt": [
-                                "DruvaCloudRangerStackSetFunction",
-                                "Arn"
-                            ]
-                        },
-                        "Id": "IDDruvaCloudRangerControlTowerEvents"
-                    }
-                ]
-            }
-        },
-        "DruvaCloudRangerControlTowerLifeCyclePermission": {
-            "Type": "AWS::Lambda::Permission",
-            "Properties": {
-                "Action": "lambda:InvokeFunction",
-                "FunctionName": {
-                    "Fn::GetAtt": [
-                        "DruvaCloudRangerStackSetFunction",
-                        "Arn"
-                    ]
-                },
-                "Principal": "events.amazonaws.com",
-                "SourceArn": {
-                    "Fn::GetAtt": [
-                        "DruvaCloudRangerControlTowerEvents",
-                        "Arn"
-                    ]
-                }
-            }
-        }
-    }
+					"S3Key": "stackset.zip"
+				},
+				"Handler": "stackset.handler",
+				"Runtime": "nodejs14.x",
+				"Timeout": 120,
+				"ReservedConcurrentExecutions": 1,
+				"Environment": {
+					"Variables": {
+						"stackSetName": {
+							"Ref": "StackSetName"
+						},
+						"seedAccounts": {
+							"Ref": "LaunchAccountList"
+						},
+						"stackSNS": {
+							"Ref": "DruvaCloudRangerStackSNS"
+						},
+						"stackRegion": {
+							"Ref": "StackRegion"
+						}
+					}
+				},
+				"Role": {
+					"Fn::GetAtt": [
+						"DruvaCloudRangerStackSetFunctionRole",
+						"Arn"
+					]
+				}
+			}
+		},
+		"DruvaCloudRangerControlTowerEvents": {
+			"Type": "AWS::Events::Rule",
+			"Properties": {
+				"Description": "Captures AWS Control Tower LifeCycle events and invokes additional functions.",
+				"EventPattern": {
+					"detail": {
+						"eventName": [
+							"CreateManagedAccount",
+							"UpdateManagedAccount"
+						],
+						"eventSource": [
+							"controltower.amazonaws.com"
+						]
+					},
+					"detail-type": [
+						"AWS Service Event via CloudTrail"
+					],
+					"source": [
+						"aws.controltower"
+					]
+				},
+				"Name": "DruvaCloudRangerControlTowerEvents",
+				"State": "ENABLED",
+				"Targets": [
+					{
+						"Arn": {
+							"Fn::GetAtt": [
+								"DruvaCloudRangerStackSetFunction",
+								"Arn"
+							]
+						},
+						"Id": "IDDruvaCloudRangerControlTowerEvents"
+					}
+				]
+			}
+		},
+		"DruvaCloudRangerControlTowerLifeCyclePermission": {
+			"Type": "AWS::Lambda::Permission",
+			"Properties": {
+				"Action": "lambda:InvokeFunction",
+				"FunctionName": {
+					"Fn::GetAtt": [
+						"DruvaCloudRangerStackSetFunction",
+						"Arn"
+					]
+				},
+				"Principal": "events.amazonaws.com",
+				"SourceArn": {
+					"Fn::GetAtt": [
+						"DruvaCloudRangerControlTowerEvents",
+						"Arn"
+					]
+				}
+			}
+		}
+	}
 }
